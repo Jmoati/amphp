@@ -18,9 +18,24 @@ Loop::run(function() {
     ];
 
     $server = new Server($sockets, new CallableRequestHandler(function (Request $request) {
+
+        $stream = $request->getBody();
+        $stream->increaseSizeLimit(1 * 1024 * 1024 * 1024 * 1024);
+        function convert($size)
+        {
+            $unit=array('b','kb','mb','gb','tb','pb');
+            return(@round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i]);
+        }
+
+        while (($chunk = yield $stream->read()) !== null) {
+
+
+            var_dump(convert(memory_get_usage(false))); // 123 kb
+        }
+
         return new Response(Status::OK, [
             "content-type" => "application/json; charset=utf-8",
-        ],  json_encode((array)$request));
+        ], 'hello');
     }), new NullLogger());
 
     yield $server->start();

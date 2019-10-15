@@ -1,0 +1,6 @@
+{
+    "require": {
+        "ext-pcntl": "*",
+        "amphp/http-server": "^1.1"
+    }
+}

@@ -18,6 +18,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Routing\Loader\AnnotationDirectoryLoader;
+use Symfony\Component\Routing\Matcher\UrlMatcher;
+use Symfony\Component\Routing\RequestContext;
 use function Amp\Socket\listen;
 
 class ServerStartCommand extends Command
@@ -40,19 +42,24 @@ class ServerStartCommand extends Command
         );
 
         $routes = $loader->load(__DIR__.'/../Action/');
+        $context = new RequestContext('/');
+        $router = new UrlMatcher($routes, $context);
 
         $status = new ProgressBar($output);
         $status->setFormat("Since: <info>%elapsed%</info> | Memory: <info>%memory%</info>  | Requests:  <info>%current%</info>");
         $status->start();
 
-        Loop::run(function() use ($input, $status) {
+        Loop::run(function() use ($input, $status, $router) {
             $sockets = [
                 listen(sprintf("0.0.0.0:%d", $input->getOption("port"))),
                 listen(sprintf("[::]:%d", $input->getOption("port"))),
             ];
 
-            $server = new Server($sockets, new CallableRequestHandler(function (Request $request) use ($status) {
+            $server = new Server($sockets, new CallableRequestHandler(function (Request $request) use ($status, $router) {
                 $status->advance();
+                $parameters = $router->match($request->getUri()->getPath());
+
+                return ((new $parameters['_controller']()));
 
                 $stream = $request->getBody();
                 $stream->increaseSizeLimit(125000000000);

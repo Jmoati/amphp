@@ -2,11 +2,18 @@
     "require": {
         "ext-pcntl": "*",
         "amphp/http-server": "^1.1",
-        "symfony/console": "^4.3"
+        "symfony/console": "^4.3",
+        "symfony/routing": "^4.3",
+        "symfony/config": "^4.3",
+        "doctrine/annotations": "^1.8",
+        "doctrine/cache": "^1.8"
     },
     "autoload": {
         "psr-4": {
             "App\\": "src"
         }
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^4.3"
     }
 }

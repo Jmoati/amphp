@@ -1,6 +1,12 @@
 {
     "require": {
         "ext-pcntl": "*",
-        "amphp/http-server": "^1.1"
+        "amphp/http-server": "^1.1",
+        "symfony/console": "^4.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src"
+        }
     }
 }

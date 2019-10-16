@@ -8,6 +8,7 @@ use Amp\Http\Server\Response;
 use Amp\Http\Server\Server;
 use Amp\Http\Status;
 use Amp\Loop;
+use App\Handler\RequestHandler;
 use App\Routing\AnnotatedRouteControllerLoader;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Psr\Log\NullLogger;
@@ -22,7 +23,7 @@ use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use function Amp\Socket\listen;
 
-class ServerStartCommand extends Command
+final class ServerStartCommand extends Command
 {
     protected static $defaultName = 'server:start';
 
@@ -55,22 +56,7 @@ class ServerStartCommand extends Command
                 listen(sprintf("[::]:%d", $input->getOption("port"))),
             ];
 
-            $server = new Server($sockets, new CallableRequestHandler(function (Request $request) use ($status, $router) {
-                $status->advance();
-                $parameters = $router->match($request->getUri()->getPath());
-
-                return ((new $parameters['_controller']()));
-
-                $stream = $request->getBody();
-                $stream->increaseSizeLimit(125000000000);
-
-                while (($chunk = yield $stream->read()) !== null) {
-                }
-
-                return new Response(Status::OK, [
-                    "content-type" => "application/json; charset=utf-8",
-                ], 'hello');
-            }), new NullLogger());
+            $server = new Server($sockets, new RequestHandler($router, $status), new NullLogger());
 
             yield $server->start();
 

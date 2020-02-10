@@ -1,0 +1,14 @@
+image: jmoati/php-fpm
+
+cache:
+  paths:
+  - vendor/
+
+before_script:
+- apk --update add composer
+- composer install
+- composer require --dev phpstan/phpstan
+  
+phpstan:
+  script:
+  - vendor/bin/phpstan analyse --level=max src bin

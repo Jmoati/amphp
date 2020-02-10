@@ -13,6 +13,6 @@ class IndexAction
      */
     public function __invoke(): Response
     {
-        return new Response(Status::OK, [],__CLASS__.' : '.__LINE__);
+        return new Response(Status::OK, [], __CLASS__ . ' : ' . __LINE__);
     }
 }

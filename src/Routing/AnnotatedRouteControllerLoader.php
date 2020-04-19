@@ -17,17 +17,17 @@ class AnnotatedRouteControllerLoader extends AnnotationClassLoader
             $route->setDefault('_controller', $class->getName() . '::' . $method->getName());
         }
     }
-    
+
     protected function getDefaultRouteName(ReflectionClass $class, ReflectionMethod $method): string
     {
         return preg_replace([
-                                '/(bundle|controller)_/',
-                                '/action(_\d+)?$/',
-                                '/__/',
-                            ], [
-                                '_',
-                                '\\1',
-                                '_',
-                            ], parent::getDefaultRouteName($class, $method));
+            '/(bundle|controller)_/',
+            '/action(_\d+)?$/',
+            '/__/',
+        ], [
+            '_',
+            '\\1',
+            '_',
+        ], parent::getDefaultRouteName($class, $method));
     }
 }

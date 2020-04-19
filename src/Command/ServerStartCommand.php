@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use Amp\Http\Server\Server;
+use Amp\Http\Server\HttpServer;
 use Amp\Loop;
 use App\Handler\RequestHandler;
 use App\Routing\AnnotatedRouteControllerLoader;
@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Routing\Loader\AnnotationDirectoryLoader;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
-use function Amp\Socket\listen;
+use Amp\Socket\Server;
 
 final class ServerStartCommand extends Command
 {
@@ -47,11 +47,11 @@ final class ServerStartCommand extends Command
         
         Loop::run(function () use ($input, $status, $router) {
             $sockets = [
-                listen(sprintf("0.0.0.0:%d", (int)$input->getOption("port"))),
-                listen(sprintf("[::]:%d", (int)$input->getOption("port"))),
+                Server::listen(sprintf("0.0.0.0:%d", (int)$input->getOption("port"))),
+                Server::listen(sprintf("[::]:%d", (int)$input->getOption("port"))),
             ];
             
-            $server = new Server($sockets, new RequestHandler($router, $status), new NullLogger());
+            $server = new HttpServer($sockets, new RequestHandler($router, $status), new NullLogger());
             
             yield $server->start();
             

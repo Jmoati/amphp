@@ -1,7 +1,8 @@
 {
     "require": {
+        "php": ">=7.4.*",
         "ext-pcntl": "*",
-        "amphp/http-server": "^1.1",
+        "amphp/http-server": "^2.0",
         "symfony/console": "^5.0",
         "symfony/routing": "^5.0",
         "symfony/config": "^5.0",

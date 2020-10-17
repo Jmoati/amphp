@@ -1,13 +1,27 @@
 {
     "require": {
-        "php": ">=7.4.*",
+        "php": ">=7.4",
         "ext-pcntl": "*",
         "amphp/http-server": "^2.0",
         "symfony/console": "^5.0",
         "symfony/routing": "^5.0",
         "symfony/config": "^5.0",
         "doctrine/annotations": "^1.8",
-        "doctrine/cache": "^1.8"
+        "doctrine/cache": "^1.8",
+        "symfony/http-client": "^5.0",
+        "symfony/flex": "^1.9",
+        "nelmio/cors-bundle": "^2.1",
+        "symfony/asset": "^5.1",
+        "symfony/expression-language": "^5.1",
+        "composer/package-versions-deprecated": "^1.11",
+        "phpdocumentor/reflection-docblock": "^5.2",
+        "symfony/property-access": "^5.1",
+        "symfony/property-info": "^5.1",
+        "symfony/serializer": "^5.1",
+        "symfony/validator": "^5.1",
+        "symfony/polyfill-uuid": "^1.18",
+        "symfony/dotenv": "^5.1",
+        "symfony/yaml": "^5.1"
     },
     "autoload": {
         "psr-4": {
@@ -15,6 +29,16 @@
         }
     },
     "require-dev": {
-        "symfony/var-dumper": "^5.0"
+        "symfony/var-dumper": "^5.0",
+        "symfony/stopwatch": "^5.1",
+        "symfony/web-profiler-bundle": "^5.1",
+        "symfony/debug-bundle": "^5.1",
+        "symfony/monolog-bundle": "^3.0"
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        }
     }
 }

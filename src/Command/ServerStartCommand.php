@@ -26,8 +26,8 @@ final class ServerStartCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setDescription("Start the Http server")
-            ->addOption("port", "p", InputOption::VALUE_REQUIRED, "The port to be listen", 1337);
+            ->setDescription('Start the Http server')
+            ->addOption('port', 'p', InputOption::VALUE_REQUIRED, 'The port to be listen', 80);
     }
     
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -60,7 +60,7 @@ final class ServerStartCommand extends Command
                 yield $server->stop();
             });
             
-            Loop::repeat(1000, function () use ($status) {
+            Loop::repeat(100, function () use ($status) {
                 $status->display();
             });
         });

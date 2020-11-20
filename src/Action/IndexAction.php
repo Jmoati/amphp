@@ -9,7 +9,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class IndexAction
 {
     /**
-     * @Route("/test")
+     * @Route("/t")
      */
     public function __invoke(): Response
     {

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Command;
+namespace App\Server;
 
 use Amp\Http\Server\HttpServer;
 
 use Amp\Loop;
-use App\Handler\RequestHandler;
+use App\Routing\SymfonyRouting;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Console\Command\Command;
@@ -18,16 +18,13 @@ final class ServerStartCommand extends Command implements LoggerAwareInterface
 {
     protected static $defaultName = 'server:start';
     
-    private string $projectDir;
-    private RequestHandler $requestHandler;
-    
     use LoggerAwareTrait;
     
-    public function __construct(string $projectDir, RequestHandler $requestHandler)
-    {
-        $this->projectDir = $projectDir;
-        $this->requestHandler = $requestHandler;
-
+    public function __construct(
+        private string $projectDir,
+        private RequestHandler $requestHandler,
+        private SymfonyRouting $symfonyRouting
+    ) {
         parent::__construct();
     }
     

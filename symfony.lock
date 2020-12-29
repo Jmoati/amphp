@@ -11,6 +11,9 @@
     "amphp/dns": {
         "version": "v1.2.3"
     },
+    "amphp/file": {
+        "version": "v1.0.2"
+    },
     "amphp/hpack": {
         "version": "v3.1.0"
     },

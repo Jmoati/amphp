@@ -13,7 +13,10 @@
         "symfony/monolog-bundle": "^3.0",
         "symfony/yaml": "^5.1",
         "amphp/file": "^1.0",
-        "jmoati/mimey": "^3.0"
+        "jmoati/mimey": "^3.0",
+        "symfony/twig-bundle": "^5.2",
+        "twig/extra-bundle": "^2.12|^3.0",
+        "twig/twig": "^2.12|^3.0"
     },
     "autoload": {
         "psr-4": {

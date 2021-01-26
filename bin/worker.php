@@ -2,10 +2,20 @@
 
 use Amp\Parallel\Sync\Channel;
 use App\Kernel;
+use App\Server\Response;
+use App\Server\StreamedResponse;
 use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\ErrorHandler\Debug;
+use Symfony\Component\HttpFoundation\Request as SfRequest;
+use Symfony\Component\HttpFoundation\Response as SfResponse;
+use App\Server\Request;
+use function Amp\call;
 
-return function (Channel $channel): Generator {
+return function (Channel $channel): Generator
+{
+    register_shutdown_function(function () use ($channel) {
+        $channel->send('Worker die ... Do you use die() or exit() ?');
+    });
     
     (new Dotenv())->bootEnv(__DIR__ . '/../.env');
     
@@ -17,31 +27,50 @@ return function (Channel $channel): Generator {
     $kernel = new Kernel($_SERVER['APP_ENV'], (bool)$_SERVER['APP_DEBUG']);
     
     while (true) {
-        gc_collect_cycles();
-        
-        $request = yield $channel->receive();
-        $kernel->boot();
-        
-        $response = $kernel->handle($request);
-        $kernel->terminate($request, $response);
+        try {
+            gc_collect_cycles();
+            
+            $sfRequest = new SfRequest();
 
-        yield $channel->send($response->getContent());
-        yield $channel->send(null);
-        
-    /*
-    yield $channel->send($response->getContent());
+            if ($request = yield $channel->receive()) {
+                assert($request instanceof Request);
+
+                $sfRequest = SfRequest::create(
+                    $request->uri,
+                    $request->method,
+                    $request->parameters,
+                    $request->cookies,
+                    $request->files,
+                    $request->server,
+                    (null !== $request->contentPath) ? fopen($request->contentPath, 'r') ?: null : null
+                );
+            }
+            
+            $kernel->boot();
+            
+            try {
+                $sfResponse = $kernel->handle($sfRequest);
+            } catch (Exception $exception) {
+                $sfResponse = new SfResponse((string)$exception);
+            }
+        } catch (Exception $exception) {
+            $sfResponse = new SfResponse((string)$exception);
+        }
     
-*/
-        /*
-        yield $channel->send(null);
-        */
+        $kernel->terminate($sfRequest, $sfResponse);
         
+        yield $channel->send(new Response(
+            $sfResponse->getContent(),
+            $sfResponse->headers,
+            $sfResponse->getStatusCode()
+        ));
 
-//        $stream = fopen('http://test-debit.free.fr/1048576.rnd', 'r');
-  
-  /*      while (false !== ($data = stream_get_contents($stream, 1024*1024))) {
-            yield $channel->send($data);
-        }*/
-        
+        if ($sfResponse instanceof StreamedResponse) {
+            yield call(function() use ($sfResponse, $channel) {
+                $sfResponse->getCallback()($channel);
+            });
+
+            yield $channel->send(null);
+        }
     }
 };

@@ -1,21 +1,20 @@
 <?php
 
-
 namespace App\Server;
 
-use Amp\Http\Server\Response;
+use Amp\Http\Server\Request as AmpRequest;
+use Amp\Http\Server\Response as AmpResponse;
 use Amp\Http\Status;
 use Amp\Process\StatusError;
 use Amp\Promise;
 use Error;
 use SplObjectStorage;
-use Symfony\Component\HttpFoundation\Request;
 use function Amp\call;
 use function assert;
 
 final class Pool
 {
-    private const DEFAULT_MAX_SIZE = 32;
+    private const DEFAULT_MAX_SIZE = 64;
     private const DEFAULT_MINIMUM_SIZE = 8;
     
     private bool $running = true;
@@ -23,8 +22,11 @@ final class Pool
     private ?Promise $exitStatus = null;
     
     public function __construct(
+        private string $workerPath,
+        private string $tmpPath,
         private int $maxSize = self::DEFAULT_MAX_SIZE,
-        private int $minSize = self::DEFAULT_MINIMUM_SIZE
+        private int $minSize = self::DEFAULT_MINIMUM_SIZE,
+
     ) {
         if ($maxSize < 0) {
             throw new Error("Maximum size must be a non-negative integer");
@@ -68,7 +70,7 @@ final class Pool
     public function warmup($count = self::DEFAULT_MINIMUM_SIZE): Promise {
         return call(function () use ($count) {
             for ($i = 0; $i < $count; ++$i) {
-                $response = yield $this->handle(new Request());
+                $response = yield $this->handle(null);
                 yield $response->getBody()->read(); // must be read te be release
             }
         });
@@ -116,28 +118,34 @@ final class Pool
         }
         
         if (($this->getWorkerCount() >= $this->minSize)) {
-            /** @var Worker $worker */
             foreach ($this->workers as $worker) {
+                assert($worker instanceof Worker);
+                if (false === $worker->isIdle() && false === $worker->isRunning()) {
+                    $worker->shutdown();
+                    $this->workers->detach($worker);
+                    continue;
+                }
+                
                 if ($worker->isIdle()) {
                     return $worker;
                 }
             }
         }
     
-        $worker = new Worker();
+        $worker = new Worker($this->workerPath, $this->tmpPath);
         $this->workers->attach($worker, 0);
         $this->workers[$worker] += 1;
         
         return $worker;
     }
     
-    public function handle($request): Promise
+    public function handle(?AmpRequest $request): Promise
     {
         $worker = $this->pull();
         
         if (null === $worker) {
             return call(function () {
-               return new Response(Status::TOO_MANY_REQUESTS);
+               return new AmpResponse(Status::TOO_MANY_REQUESTS);
             });
         }
         

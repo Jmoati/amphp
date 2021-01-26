@@ -6,12 +6,14 @@ services:
         bind:
             $projectDir: '%kernel.project_dir%'
             $routing: !tagged_iterator { tag: app.routing, default_priority_method: getPriority }
-
+            $workerPath: '%kernel.project_dir%/bin/worker.php'
+            $tmpPath:  '%kernel.project_dir%/var/tmp'
     App\:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
+            - '../src/Server'
             - '../src/Kernel.php'
             - '../src/Tests/'
             - '../src/Action/'
@@ -23,3 +25,6 @@ services:
     _instanceof:
         App\Routing\Specs\RoutingInterface:
             tags: ['app.routing']
+
+    App\Server\ServerStartCommand: ~
+    App\Server\RequestHandler: ~

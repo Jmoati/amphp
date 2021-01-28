@@ -17,7 +17,8 @@
         "symfony/twig-bundle": "^5.2",
         "twig/extra-bundle": "^2.12|^3.0",
         "twig/twig": "^2.12|^3.0",
-        "symfony/polyfill-uuid": "^1.22"
+        "symfony/polyfill-uuid": "^1.22",
+        "symfony/lock": "^5.2"
     },
     "autoload": {
         "psr-4": {

@@ -9,11 +9,15 @@ use Amp\Http\Server\Response as AmpResponse;
 use Amp\Producer;
 use Amp\Promise;
 use Amp\Parallel\Context\Context;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\LockInterface;
+use Symfony\Component\Lock\Store\FlockStore;
+use function Amp\ByteStream\pipe;
 use function Amp\call;
 use Amp\File\File;
-use Amp\ByteStream;
 use function Amp\File\open;
 use function Amp\Parallel\Context\create;
+use function Amp\File\unlink;
 
 class Worker
 {
@@ -21,6 +25,7 @@ class Worker
     private bool $idle = false;
     private string $uuid;
     private ?File $file = null;
+    private ?LockInterface $lock = null;
     
     public function __construct(
       private string $workerPath,
@@ -28,6 +33,9 @@ class Worker
     ) {
         $this->context = create($this->workerPath);;
         $this->uuid = (string) uuid_create();
+
+        $store = new FlockStore($this->tmpPath.'/stores');
+        $this->lock = (new LockFactory($store))->createLock($this->getContentFilepath(), 1800);
     }
 
     public function __destruct()
@@ -101,11 +109,20 @@ class Worker
             $request = new Request('/');
 
             if (null !== $ampRequest) {
+                if (false === $this->lock->acquire()) {
+                    die('wtf ???');
+                }
+
                 $this->file = yield open($this->getContentFilepath(), "w+");
                 $body = $ampRequest->getBody();
                 $body->increaseSizeLimit(10 * 1024 ** 2 * 1024);
-    
-                ByteStream\pipe($body, $this->file);
+
+                $pipe = pipe($body, $this->file);
+
+                $pipe->onResolve(function(){
+                    $this->lock->release();
+                });
+
                 $request = $this->mapRequest($ampRequest, $this->getContentFilepath());
             }
     

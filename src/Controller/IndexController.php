@@ -9,9 +9,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class IndexController
 {
-    /**
-     * @Route("/test")
-     */
+    #[Route("/test")]
     public function __invoke(Request $request)
     {
         $response =  new StreamedResponse(function (Channel $channel) {

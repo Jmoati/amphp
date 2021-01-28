@@ -3,18 +3,28 @@
 use Amp\Parallel\Sync\Channel;
 use App\Kernel;
 use App\Server\Response;
+use App\Server\StreamedRequest;
 use App\Server\StreamedResponse;
 use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\HttpFoundation\Request as SfRequest;
 use Symfony\Component\HttpFoundation\Response as SfResponse;
 use App\Server\Request;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\FlockStore;
 use function Amp\call;
 
 return function (Channel $channel): Generator
 {
     register_shutdown_function(function () use ($channel) {
-        $channel->send('Worker die ... Do you use die() or exit() ?');
+        $lastError = error_get_last();
+
+        if (null === $lastError) {
+            $channel->send('Worker die ... Do you use die() or exit() ?');
+        } else {
+            $channel->send(sprintf('%s (%s | line %d)', $lastError['message'], $lastError['file'], $lastError['line']));
+        }
+
     });
     
     (new Dotenv())->bootEnv(__DIR__ . '/../.env');
@@ -35,14 +45,24 @@ return function (Channel $channel): Generator
             if ($request = yield $channel->receive()) {
                 assert($request instanceof Request);
 
-                $sfRequest = SfRequest::create(
+                $content = null;
+                $lock = null;
+
+                if ($request->contentPath) {
+                    $store = new FlockStore($kernel->getProjectDir().'/var/tmp/stores');
+                    $lock = (new LockFactory($store))->createLock($request->contentPath, 1800);
+                    $content = fopen($request->contentPath, 'r') ?: null;
+                }
+
+                $sfRequest = StreamedRequest::create(
                     $request->uri,
                     $request->method,
                     $request->parameters,
                     $request->cookies,
                     $request->files,
                     $request->server,
-                    (null !== $request->contentPath) ? fopen($request->contentPath, 'r') ?: null : null
+                    $content,
+                    $lock
                 );
             }
             
